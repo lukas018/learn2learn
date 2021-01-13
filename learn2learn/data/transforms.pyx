@@ -430,7 +430,7 @@ class RandomNWays(CythonRandomNWays):
     """
 
     def __init__(self, dataset, nrange=(4, 5)):
-        super(NWays, self).__init__(dataset=dataset, nrange=nrange)
+        super(RandomNWays, self).__init__(dataset=dataset, nrange=nrange)
 
 
 cdef class CythonRandomNWays(TaskTransform):
@@ -441,13 +441,13 @@ cdef class CythonRandomNWays(TaskTransform):
         dict indices_to_labels
 
     def __init__(self, dataset, nrange=(4, 5)):
-        super(CythonNWays, self).__init__(dataset)
+        super(CythonRandomNWays, self).__init__(dataset)
         self.nmin = nrange[0]
         self.nmax = nrange[1]
         self.indices_to_labels = dict(dataset.indices_to_labels)
 
     def __reduce__(self):
-        return CythonNWays, (self.dataset, (self.nmin, self.nmax))
+        return CythonRandomNWays, (self.dataset, (self.nmin, self.nmax))
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -480,7 +480,7 @@ cdef class CythonRandomNWays(TaskTransform):
         return result
 
 
-class RandomKShots(CythonKShots):
+class RandomKShots(CythonRandomKShots):
 
     """
     [[Source]](https://github.com/learnables/learn2learn/blob/master/learn2learn/data/transforms.py)
@@ -493,7 +493,7 @@ class RandomKShots(CythonKShots):
     """
 
     def __init__(self, dataset, krange=1, replacement=False):
-        super(KShots, self).__init__(dataset=dataset,
+        super(RandomKShots, self).__init__(dataset=dataset,
                                      krange=krange,
                                      replacement=replacement)
 
@@ -506,14 +506,14 @@ cdef class CythonRandomKShots(TaskTransform):
         bool replacement
 
     def __init__(self, dataset, krange=(11, 15), replacement=False):
-        super(CythonKShots, self).__init__(dataset)
+        super(CythonRandomKShots, self).__init__(dataset)
         self.dataset = dataset
         self.kmin = krange[0]
         self.kmax = krange[1]
         self.replacement = replacement
 
     def __reduce__(self):
-        return CythonKShots, (self.dataset, (self.kmin, self.kmax), self.replacement)
+        return CythonRandomKShots, (self.dataset, (self.kmin, self.kmax), self.replacement)
 
     def __call__(self, task_description):
         if task_description is None:
