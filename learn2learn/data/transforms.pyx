@@ -208,6 +208,8 @@ class RemapLabels(TaskTransform):
         labels = list(set(self.dataset.indices_to_labels[dd.index] for dd in task_description))
         if self.shuffle:
             random.shuffle(labels)
+        else:
+            labels = sorted(labels)
 
         def mapping(x):
             return labels.index(x)
