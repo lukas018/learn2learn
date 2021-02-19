@@ -244,3 +244,77 @@ class FilteredMetaDataset(MetaDataset):
 
     def __len__(self):
         return len(self.indices_to_labels)
+
+
+class SubsetMetaDataset(MetaDataset):
+    """
+    Takes in a MetaDataset and filters it to only include a subset of each class' examples
+
+    * **dataset** (Dataset) - A torch dataset
+    * **labels_to_indices ** - A dctionary from labels to a list of indices to select for that class
+
+    Use the create_intra_class_split method to create an intra-class split
+    **Example**
+    ~~~python
+    train = torchvision.datasets.CIFARFS(root="/tmp/mnist", mode="train")
+    train = l2l.data.MetaDataset(train)
+    train_ds, base_ds = SubsetMetaDataset.create_intra_class_split(train, 0.95)
+    assert len(train) * 0.05  == len(base_ds)
+    assert len(train) * 0.95  == len(train_ds)
+    assert len(train_ds.labels) == len(base_ds.labels)
+    """
+
+    def __init__(self, dataset, labels_to_indices):
+        if not isinstance(dataset, MetaDataset):
+            dataset = MetaDataset(dataset)
+
+        indices_mapper = labels_to_indices
+        self.dataset = dataset
+        self.to_true_indices = []
+        labels_to_indices = defaultdict(list)
+        indices_to_labels = defaultdict(int)
+        idx_count = 0
+        for label in indices_mapper.keys():
+            for true_idx in indices_mapper[label]:
+                self.to_true_indices.append(true_idx)
+                labels_to_indices[label].append(idx_count)
+                indices_to_labels[idx_count] = dataset.indices_to_labels[true_idx]
+                idx_count += 1
+
+        self.labels_to_indices = labels_to_indices
+        self.indices_to_labels = indices_to_labels
+        self.labels = list(self.labels_to_indices.keys())
+
+    @classmethod
+    def create_intra_class_split(cls, dataset, frac):
+        """Split a meta-dataset into a train and test set with a
+        fixed ratio of train test in each class
+        """
+
+        if not isinstance(dataset, MetaDataset):
+            dataset = MetaDataset(dataset)
+
+        def split_list(xs, frac):
+            n = int(frac*len(xs))
+            xs = random.sample(xs, len(xs))
+            base, novel = xs[:n], xs[n:]
+            return base, novel
+
+        intermediate = {
+            k: split_list(xs, frac)
+            for k, xs in dataset.labels_to_indices.items()
+        }
+        base_labels = {k: v[0] for k, v in intermediate.items()}
+        novel_labels = {k: v[1] for k, v in intermediate.items()}
+
+        ds_train = cls(dataset, base_labels)
+        ds_novel = cls(dataset, novel_labels)
+        return ds_train, ds_novel
+
+    def __getitem__(self, item):
+        true_idx = self.to_true_indices[item]
+        img, _ = self.dataset[true_idx]
+        return img, self.indices_to_labels[item]
+
+    def __len__(self):
+        return len(self.indices_to_labels)
