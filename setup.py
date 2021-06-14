@@ -25,7 +25,8 @@ else:
 # https://github.com/FedericoStra/cython-package-example/blob/master/setup.py
 extension_type = '.c'
 cmd_class = {}
-use_cython = 'develop' in sys.argv or 'build_ext' in sys.argv
+# use_cython = 'develop' in sys.argv or 'build_ext' in sys.argv
+use_cython = True
 if use_cython:
     from Cython.Build import cythonize
     from Cython.Distutils import build_ext
